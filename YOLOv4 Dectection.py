@@ -9,10 +9,6 @@ from tf2_yolov4.anchors import YOLOV4_ANCHORS
 
 class_list = [cls.strip() for cls in open("yolov4_utils/coco_classes.txt")]  # COCO classes
 color_list = loadtxt("yolov4_utils/colors.txt").tolist()  # box colors
-if os.path.isdir("images") is False:
-    os.mkdir("images")
-if os.path.isdir("videos") is False:
-    os.mkdir("videos")
 
 
 def get_processed_image(img, boxes, scores, classes):
