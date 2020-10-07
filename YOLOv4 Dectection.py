@@ -33,7 +33,7 @@ def get_processed_image(img, boxes, scores, classes):
             text = f'{class_list[cl]}: {score:0.2f}'
             (test_width, text_height), baseline = cv2.getTextSize(text, cv2.FONT_ITALIC, 0.5, 1)
             end_point = (int(xmin) + test_width + 2, int(ymin) - text_height - 2)
-            img = cv2.rectangle(img, start_point, end_point, (0, 255, 255), -1)
+            img = cv2.rectangle(img, start_point, end_point, color, -1)
             cv2.putText(img, text, start_point, cv2.FONT_ITALIC, 0.5, 0, 1)  # print class type with score
     return img
 
