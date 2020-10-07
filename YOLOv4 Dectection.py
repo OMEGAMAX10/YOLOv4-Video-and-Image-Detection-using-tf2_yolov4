@@ -28,7 +28,7 @@ def get_processed_image(img, boxes, scores, classes):
         if score > 0:
             start_point = (int(xmin), int(ymin))
             end_point = (int(xmax), int(ymax))
-            color = color_list[cl % 6]
+            color = color_list[cl]
             img = cv2.rectangle(img, start_point, end_point, color, 2)  # draw class box
             text = f'{class_list[cl]}: {score:0.2f}'
             (test_width, text_height), baseline = cv2.getTextSize(text, cv2.FONT_ITALIC, 0.5, 1)
@@ -102,7 +102,7 @@ def detect_video(video_path, output_path="output_videos"):
             frame = get_processed_image(frame, boxes[0] * [WIDTH, HEIGHT, WIDTH, HEIGHT], scores[0], classes[0].astype(int))
             cv2.imshow(Path(video_path).name, frame)
             out.write(frame)
-            if cv2.waitKey(int(200 // cap.get(cv2.CAP_PROP_FPS))) & 0xFF == 27:  # 27 = ESC ASCII code
+            if cv2.waitKey(int(50 // cap.get(cv2.CAP_PROP_FPS))) & 0xFF == 27:  # 27 = ESC ASCII code
                 break
         else:
             break
@@ -112,12 +112,42 @@ def detect_video(video_path, output_path="output_videos"):
     return output_video_path
 
 
-vid_path = "videos/cars_small.mp4"
-os.startfile(os.path.normpath(vid_path))
-output_vid_path = detect_video(vid_path)
-os.startfile(output_vid_path)
+def detect_webcam():
+    # Detects the objects from webcam using a YOLOv4 model
+    cam = cv2.VideoCapture(0)
+    # cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    frame_size = (int(cam.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    WIDTH, HEIGHT = [length // 32 * 32 for length in frame_size]
+    yolo_model = YOLOv4(input_shape=(HEIGHT, WIDTH, 3), anchors=YOLOV4_ANCHORS, num_classes=80,
+                        training=False, yolo_max_boxes=100, yolo_iou_threshold=0.5, yolo_score_threshold=0.5,
+                        weights="yolov4_utils/yolov4.h5")
+    yolo_model.summary()
+    while cam.isOpened():
+        ret, frame = cam.read()
+        if ret is True:
+            image = tf.convert_to_tensor(frame)
+            image = tf.image.resize(image, (HEIGHT, WIDTH))
+            images = tf.expand_dims(image, axis=0) / 255.0
+            boxes, scores, classes, valid_detections = yolo_model.predict(images)
+            frame = get_processed_image(frame, boxes[0] * [WIDTH, HEIGHT, WIDTH, HEIGHT], scores[0], classes[0].astype(int))
+            cv2.imshow('Webcam (Press ESC for exit)', frame)
+            if cv2.waitKey(int(1000 // cam.get(cv2.CAP_PROP_FPS))) & 0xFF == 27:  # 27 = ESC ASCII code
+                break
+        else:
+            break
+    cam.release()
+    cv2.destroyAllWindows()
+
+
+detect_webcam()
 
 img_path = get_file("cars.jpg", "https://github.com/sicara/tf2-yolov4/raw/master/notebooks/images/cars.jpg", cache_dir="images/", cache_subdir="")
 os.startfile(os.path.normpath(img_path))
 output_img_path = detect_image(img_path)
 os.startfile(output_img_path)
+
+vid_path = "videos/amsterdam.mp4"
+os.startfile(os.path.normpath(vid_path))
+output_vid_path = detect_video(vid_path)
+os.startfile(output_vid_path)
